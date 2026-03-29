@@ -1,0 +1,78 @@
+# ============================================
+# Android Studio / Gradle - .gitignore actualizado (2025)
+# Basado en: https://github.com/github/gitignore/blob/main/Android.gitignore
+# ============================================
+
+# Build outputs
+**/build/
+**/out/
+
+# Gradle
+.gradle/
+!gradle-wrapper.jar
+gradle-app.setting
+.gradle-task-name-cache
+
+# Local configuration (SDK path, etc.)
+local.properties
+
+# Log & debug files
+*.log
+*.hprof
+
+# Android artifacts
+*.apk
+*.ap_
+*.aab
+*.aar
+*.dex
+*.class
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google services (e.g. Firebase API keys)
+google-services.json
+
+# NDK / CMake
+.externalNativeBuild/
+.cxx/
+cmake-build*/
+
+# Kotlin
+.kotlin/
+
+# Lint
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+lint/reports/
+
+# Captures & screenshots
+captures/
+
+# OS-specific clutter
+.DS_Store
+Thumbs.db
+
+# Temporary / editor swap files
+*~
+*.swp
+
+# App-specific (ejemplo de outputs de release)
+app/release/output.json
+
+# Fastlane (si usas despliegues automáticos)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
