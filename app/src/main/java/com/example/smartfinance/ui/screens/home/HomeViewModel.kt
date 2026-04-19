@@ -21,12 +21,12 @@ class HomeViewModel @Inject constructor(
 
     private var getDataJob: Job? = null
 
-    fun loadUserData(userId: Int) {
+    fun loadUserData() {
         getDataJob?.cancel()
         getDataJob = viewModelScope.launch {
             state = HomeState.Loading
             try {
-                val user = userRepository.getUserById(userId)
+                val user = userRepository.getUserById(userRepository.currentUserId)
                 if (user != null) {
                     state = HomeState.Success(user, 1250.50)
                 } else {

@@ -13,27 +13,37 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = BlackPrimary,
-    onPrimary = WhiteBackground,
-    background = WhiteBackground,
-    onBackground = BlackPrimary,
-    surface = WhiteBackground,
-    onSurface = BlackPrimary,
-    surfaceVariant = GraySurface,
-    onSurfaceVariant = GrayText,
-    outline = GrayBorder
+    primary = PrimaryColor,
+    secondary = PrimaryLight,
+    tertiary = PrimaryDark,
+    onPrimary = Color.White,
+    background = BackgroundLight,
+    onBackground = TextPrimaryLight,
+    surface = SurfaceLight,
+    onSurface = TextPrimaryLight,
+    surfaceVariant = Color(0xFFEDF2F7),
+    onSurfaceVariant = TextSecondaryLight,
+    outline = GrayBorder,
+    error = ExpenseColor,
+    errorContainer = Color(0xFFFDEDED),
+    onErrorContainer = Color(0xFFC62828)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = WhiteBackground,
-    onPrimary = BlackPrimary,
-    background = BlackPrimary,
-    onBackground = WhiteBackground,
-    surface = BlackPrimary,
-    onSurface = WhiteBackground,
-    surfaceVariant = Color(0xFF1E1E1E),
-    onSurfaceVariant = Color(0xFFAAAAAA),
-    outline = Color(0xFF424242)
+    primary = PrimaryLight,
+    secondary = PrimaryColor,
+    tertiary = PrimaryDark,
+    onPrimary = Color.Black,
+    background = BackgroundDark,
+    onBackground = TextPrimaryDark,
+    surface = SurfaceDark,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = Color(0xFF334155),
+    onSurfaceVariant = TextSecondaryDark,
+    outline = Color(0xFF475569),
+    error = ExpenseColor,
+    errorContainer = Color(0xFF4A0F0F),
+    onErrorContainer = Color(0xFFFFCDD2)
 )
 
 @Composable

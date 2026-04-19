@@ -23,4 +23,10 @@ interface TransactionDao {
 
     @Query("SELECT SUM(amount) FROM transactions WHERE userId = :userId AND type = 'EXPENSE'")
     fun getTotalExpense(userId: Int): Flow<Double?>
+
+    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
+    suspend fun getTransactionById(id: Int): TransactionEntity?
+
+    @Query("DELETE FROM transactions WHERE userId = :userId")
+    suspend fun deleteAllTransactionsByUser(userId: Int)
 }

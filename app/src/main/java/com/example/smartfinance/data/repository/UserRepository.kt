@@ -9,15 +9,31 @@ import javax.inject.Singleton
 class UserRepository @Inject constructor(
     private val userDao: UserDao
 ) {
-    suspend fun registerUser(user: UserEntity) {
-        userDao.registerUser(user)
+    var currentUserId: Int = 1
+
+    suspend fun registerUser(user: UserEntity): Long {
+        val id = userDao.registerUser(user)
+        currentUserId = id.toInt()
+        return id
     }
 
     suspend fun login(email: String, pin: String): UserEntity? {
-        return userDao.login(email, pin)
+        val user = userDao.login(email, pin)
+        if (user != null) {
+            currentUserId = user.id
+        }
+        return user
     }
 
     suspend fun getUserById(userId: Int): UserEntity? {
         return userDao.getUserById(userId)
+    }
+
+    suspend fun updateUser(user: UserEntity) {
+        userDao.updateUser(user)
+    }
+
+    suspend fun deleteUser(user: UserEntity) {
+        userDao.deleteUser(user)
     }
 }

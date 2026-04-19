@@ -1,0 +1,5 @@
+toml
+[versions]
+kotlin = "2.0.21"
+hilt = "2.52" # Debe ser 2.51 o superior para Kotlin 2.0
+room = "2.6.1"
