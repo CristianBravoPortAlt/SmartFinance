@@ -20,4 +20,12 @@ class UserRepository @Inject constructor(
     suspend fun getUserById(userId: Int): UserEntity? {
         return userDao.getUserById(userId)
     }
+
+    suspend fun updateUser(user: UserEntity) {
+        userDao.updateUser(user)
+    }
+
+    suspend fun deleteUser(user: UserEntity) {
+        userDao.deleteUser(user)
+    }
 }
