@@ -16,17 +16,17 @@ interface TransactionDao {
     suspend fun deleteTransaction(transaction: TransactionEntity)
 
     @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY dateMillis DESC")
-    fun getTransactionsByUser(userId: Int): Flow<List<TransactionEntity>>
+    fun getTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
 
     @Query("SELECT SUM(amount) FROM transactions WHERE userId = :userId AND type = 'INCOME'")
-    fun getTotalIncome(userId: Int): Flow<Double?>
+    fun getTotalIncome(userId: String): Flow<Double?>
 
     @Query("SELECT SUM(amount) FROM transactions WHERE userId = :userId AND type = 'EXPENSE'")
-    fun getTotalExpense(userId: Int): Flow<Double?>
+    fun getTotalExpense(userId: String): Flow<Double?>
 
     @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
-    suspend fun getTransactionById(id: Int): TransactionEntity?
+    suspend fun getTransactionById(id: String): TransactionEntity?
 
     @Query("DELETE FROM transactions WHERE userId = :userId")
-    suspend fun deleteAllTransactionsByUser(userId: Int)
+    suspend fun deleteAllTransactionsByUser(userId: String)
 }

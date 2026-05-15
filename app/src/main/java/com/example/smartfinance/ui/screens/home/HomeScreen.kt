@@ -1,53 +1,101 @@
 package com.example.smartfinance.ui.screens.home
 
+import android.graphics.Color.parseColor
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.smartfinance.data.local.TransactionEntity
 import com.example.smartfinance.data.local.TransactionType
-import com.example.smartfinance.ui.screens.transaction.TransactionViewModel
+import com.example.smartfinance.ui.components.GoalItemCompact
 import com.example.smartfinance.ui.components.getCategoryIcon
+import com.example.smartfinance.ui.screens.goals.GoalViewModel
+import com.example.smartfinance.ui.screens.transaction.TransactionViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
     transactionViewModel: TransactionViewModel,
+    goalViewModel: GoalViewModel,
+    onMenuClick: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToAddTransaction: () -> Unit,
-    onNavigateToEditTransaction: (Int) -> Unit,
+    onNavigateToEditTransaction: (String) -> Unit,
     onNavigateToStats: () -> Unit,
-    onNavigateToGoals: () -> Unit
+    onNavigateToGoals: () -> Unit,
+    onNavigateToGoalDetail: (String) -> Unit,
+    onNavigateToMonthlySummary: () -> Unit
 ) {
-    val state = homeViewModel.state
+    val state by homeViewModel.state.collectAsState()
     val transactions by transactionViewModel.transactions.collectAsState()
     val balance by transactionViewModel.balance.collectAsState()
     val categories by transactionViewModel.categories.collectAsState()
     val totalExpense by transactionViewModel.totalExpense.collectAsState()
     val totalIncome by transactionViewModel.totalIncome.collectAsState()
+    val goals by goalViewModel.goals.collectAsState()
 
-    LaunchedEffect(Unit) {
-        homeViewModel.loadUserData()
-    }
+    val currentState = state
+    var transactionToDelete by remember { mutableStateOf<TransactionEntity?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -67,7 +115,7 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            when (state) {
+            when (currentState) {
                 is HomeState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
@@ -82,9 +130,9 @@ fun HomeScreen(
                         // Header
                         item {
                             HomeHeader(
-                                userName = state.user.name,
-                                onNavigateToGoals = onNavigateToGoals,
-                                onNavigateToStats = onNavigateToStats,
+                                userName = currentState.user.name,
+                                profilePictureUri = currentState.user.profilePictureUri,
+                                onMenuClick = onMenuClick,
                                 onNavigateToProfile = onNavigateToProfile
                             )
                         }
@@ -98,27 +146,80 @@ fun HomeScreen(
                             )
                         }
 
-                        // Budget Warning
-                        val budget = state.user.monthlyBudget
+                        // Alerta cuando sobrepasa presupuesto
+                        val budget = currentState.user.monthlyBudget
                         val expenseVal = totalExpense ?: 0.0
-                        if (budget > 0 && expenseVal / budget >= 0.8) {
+                        val currentMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
+                        
+                        if (budget > 0 && 
+                            expenseVal / budget >= 0.8 && 
+                            currentState.user.budgetWarningDismissedMonth != currentMonth) {
                             item {
-                                BudgetWarning(expense = expenseVal, budget = budget)
+                                BudgetWarning(
+                                    expense = expenseVal, 
+                                    budget = budget,
+                                    onDismiss = { homeViewModel.dismissBudgetWarning() }
+                                )
                             }
                         }
 
-                        // Transactions Title
-                        item {
-                            Text(
-                                text = "Movimientos recientes",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-                            )
+                        if (goals.isNotEmpty()) {
+                            item {
+                                Column(modifier = Modifier.padding(top = 32.dp)) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 24.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Mis Objetivos",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        TextButton(onClick = onNavigateToGoals) {
+                                            Text("Ver todos", fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    LazyRow(
+                                        contentPadding = PaddingValues(horizontal = 24.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        items(goals) { goal ->
+                                            GoalItemCompact(
+                                                goal = goal,
+                                                onClick = { onNavigateToGoalDetail(goal.id) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
 
-                        // Transactions List
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Movimientos recientes",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                TextButton(onClick = onNavigateToMonthlySummary) {
+                                    Text("Ver todo", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        // Lista de transacciones
                         if (transactions.isEmpty()) {
                             item {
                                 EmptyTransactionsState()
@@ -131,12 +232,36 @@ fun HomeScreen(
                                     categoryName = category?.name ?: "Sin categoría",
                                     iconName = category?.iconResName ?: "category",
                                     colorHex = category?.colorHex ?: "#9E9E9E",
-                                    onClick = { onNavigateToEditTransaction(transaction.id) }
+                                    onClick = { onNavigateToEditTransaction(transaction.id) },
+                                    onLongClick = { transactionToDelete = transaction }
                                 )
                             }
                         }
                     }
                 }
+            }
+
+            if (transactionToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { transactionToDelete = null },
+                    title = { Text("Borrar Movimiento") },
+                    text = { Text("¿Estás seguro de que quieres borrar '${transactionToDelete?.title}' por ${transactionToDelete?.amount}€?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                transactionToDelete?.let { transactionViewModel.deleteTransaction(it) }
+                                transactionToDelete = null
+                            }
+                        ) {
+                            Text("Borrar", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { transactionToDelete = null }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
             }
         }
     }
@@ -145,8 +270,8 @@ fun HomeScreen(
 @Composable
 fun HomeHeader(
     userName: String,
-    onNavigateToGoals: () -> Unit,
-    onNavigateToStats: () -> Unit,
+    profilePictureUri: String?,
+    onMenuClick: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
     Row(
@@ -156,41 +281,54 @@ fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(
-                text = "Hola,",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                letterSpacing = 0.5.sp
-            )
-            Text(
-                text = userName,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 32.sp
-            )
-        }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                onClick = onNavigateToGoals,
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(44.dp)
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Star, contentDescription = "Objetivos", tint = Color(0xFFFFB703), modifier = Modifier.size(24.dp))
-                }
+                Icon(Icons.Default.Menu, contentDescription = "Menú", tint = MaterialTheme.colorScheme.primary)
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Surface(
-                onClick = onNavigateToProfile,
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Person, contentDescription = "Perfil", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = "Hola,",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = userName,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 28.sp
+                )
+            }
+        }
+        Surface(
+            onClick = onNavigateToProfile,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(44.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (profilePictureUri != null) {
+                    AsyncImage(
+                        model = profilePictureUri,
+                        contentDescription = "Perfil",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "Perfil",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
@@ -226,7 +364,7 @@ fun BalanceCard(balance: Double, income: Double, expense: Double) {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = String.format("%.2f€", balance),
+                    text = String.format(Locale.getDefault(), "%.2f€", balance),
                     fontSize = 42.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
@@ -272,79 +410,114 @@ fun BalanceSummaryItem(label: String, amount: Double, icon: androidx.compose.ui.
         Spacer(modifier = Modifier.width(12.dp))
         Column {
             Text(label, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
-            Text(String.format("%.2f€", amount), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(String.format(Locale.getDefault(), "%.2f€", amount), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
 
 @Composable
-fun BudgetWarning(expense: Double, budget: Double) {
+fun BudgetWarning(expense: Double, budget: Double, onDismiss: () -> Unit) {
     val percentage = expense / budget
     val isOver = percentage >= 1.0
     
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isOver) Color(0xFFFFEBEE) else Color(0xFFFFF8E1)
-        ),
-        shape = RoundedCornerShape(16.dp)
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(20.dp),
+        tonalElevation = 2.dp
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                if (isOver) Icons.Default.Error else Icons.Default.Warning,
-                contentDescription = null,
-                tint = if (isOver) Color(0xFFD32F2F) else Color(0xFFFFA000)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(
-                    if (isOver) "¡Presupuesto excedido!" else "Límite de presupuesto cerca",
-                    fontWeight = FontWeight.Bold,
-                    color = if (isOver) Color(0xFFD32F2F) else Color(0xFF795548),
-                    fontSize = 14.sp
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isOver) MaterialTheme.colorScheme.errorContainer 
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (isOver) Icons.Default.Warning else Icons.Default.AccountBalanceWallet,
+                    contentDescription = null,
+                    tint = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isOver) "¡Presupuesto excedido!" else "Progreso del presupuesto",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${(percentage * 100).toInt()}%",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                            Icon(
+                                Icons.Default.Close, 
+                                contentDescription = "Cerrar", 
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { percentage.coerceAtMost(1.0).toFloat() },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
                         .height(6.dp)
                         .clip(CircleShape),
-                    color = if (isOver) Color(0xFFD32F2F) else Color(0xFFFFA000),
-                    trackColor = Color.White.copy(alpha = 0.5f)
-                )
-                Text(
-                    "Has gastado ${String.format("%.2f", expense)}€ de tu límite de ${String.format("%.2f", budget)}€",
-                    fontSize = 12.sp,
-                    color = if (isOver) Color(0xFFD32F2F).copy(alpha = 0.8f) else Color(0xFF795548).copy(alpha = 0.8f)
+                    color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TransactionItem(
-    transaction: com.example.smartfinance.data.local.TransactionEntity,
+    transaction: TransactionEntity,
     categoryName: String,
     iconName: String,
     colorHex: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
     val dateStr = sdf.format(Date(transaction.dateMillis))
-    val categoryColor = Color(android.graphics.Color.parseColor(colorHex))
+    val categoryColor = Color(colorHex.toColorInt())
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 6.dp)
-            .clickable { onClick() },
+            .clip(RoundedCornerShape(20.dp))
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp
@@ -389,7 +562,7 @@ fun TransactionItem(
             
             val isIncome = transaction.type == TransactionType.INCOME
             Text(
-                text = "${if (isIncome) "+" else "-"} ${String.format("%.2f€", transaction.amount)}",
+                text = "${if (isIncome) "+" else "-"} ${String.format(Locale.getDefault(), "%.2f€", transaction.amount)}",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 16.sp,
                 color = if (isIncome) Color(0xFF2ECC71) else Color(0xFFFF5252)
@@ -407,7 +580,7 @@ fun EmptyTransactionsState() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            Icons.Default.ReceiptLong,
+            Icons.AutoMirrored.Filled.ReceiptLong,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
