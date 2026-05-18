@@ -1,8 +1,8 @@
 # SmartFinance 📱💸
 
-**SmartFinance** es una aplicación móvil nativa para Android enfocada en la gestión financiera personal (PFM). Diseñada bajo una filosofía "Offline-First" y centrada estrictamente en la privacidad del usuario, permite llevar un control total de ingresos y gastos sin necesidad de vincular cuentas bancarias ni depender de conexiones a internet.
+**SmartFinance** es una aplicación móvil nativa para Android enfocada en la gestión financiera personal (PFM) y colaborativa. Permite llevar un control total de ingresos y gastos, gestionar presupuestos compartidos y establecer metas de ahorro a largo plazo.
 
-Este proyecto constituye la memoria final para el ciclo de **Desarrollo de Aplicaciones Multiplataforma (DAM)**.
+Este proyecto constituye la memoria final para el ciclo de **Desarrollo de Aplicaciones Multiplataforma (DAM)** desarrollado por Cristian Bravo Asensio.
 
 ## 🚀 Características Principales
 
@@ -30,11 +30,14 @@ El código fuente está estructurado en capas para garantizar la escalabilidad, 
 
 ```text
 com.example.smartfinance
-├── data/               # Capa de datos (Room Entities, DAOs, Repositories)
-├── di/                 # Módulos de inyección de dependencias (Hilt)
-├── ui/                 # Capa de presentación
-│   ├── components/     # Componentes visuales reutilizables
-│   ├── navigation/     # Grafo de navegación y rutas
-│   ├── screens/        # Pantallas de la aplicación (Login, Home, Profile, etc.)
-│   └── theme/          # Sistema de diseño (Colores, Tipografía, Tema minimalista)
-└── viewmodel/          # Lógica de presentación y gestión de estados
+├── data/
+│   ├── local/
+│   └── repository/
+├── di/
+├── ui/
+│   ├── components/
+│   ├── home/
+│   ├── screens/
+│   └── theme/
+├── utils/
+└── workers/
