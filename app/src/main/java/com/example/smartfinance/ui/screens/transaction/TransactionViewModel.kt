@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.smartfinance.data.local.CategoryEntity
 import com.example.smartfinance.data.local.TransactionEntity
 import com.example.smartfinance.data.local.UserEntity
+import com.example.smartfinance.data.repository.BalanceRepository
 import com.example.smartfinance.data.repository.CategoryRepository
 import com.example.smartfinance.data.repository.GoalRepository
 import com.example.smartfinance.data.repository.TransactionRepository
@@ -26,6 +27,11 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+/**
+ * ViewModel que gestiona el estado y la lógica de negocio de las transacciones.
+ * Proporciona datos reactivos a la UI y maneja operaciones CRUD, además de
+ * controlar las alertas de presupuesto excedido.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
@@ -33,7 +39,7 @@ class TransactionViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val userRepository: UserRepository,
     private val goalRepository: GoalRepository,
-    private val balanceRepository: com.example.smartfinance.data.repository.BalanceRepository,
+    private val balanceRepository: BalanceRepository,
     private val notificationHelper: NotificationHelper
 ) : ViewModel() {
 
@@ -85,6 +91,13 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Verifica si el gasto total actual supera el presupuesto mensual establecido por el usuario.
+     * Si se supera, lanza una notificación del sistema (una vez por mes).
+     *
+     * @param expense La cantidad total de gastos acumulado.
+     * @param user El perfil del usuario con su límite de presupuesto.
+     */
     private fun checkBudgetLimit(expense: Double, user: UserEntity?) {
         val budget = user?.monthlyBudget ?: 0.0
         val currentMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())

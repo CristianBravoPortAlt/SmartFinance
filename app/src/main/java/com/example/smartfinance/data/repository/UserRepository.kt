@@ -2,6 +2,7 @@ package com.example.smartfinance.data.repository
 
 import com.example.smartfinance.data.local.UserDao
 import com.example.smartfinance.data.local.UserEntity
+import com.example.smartfinance.utils.ImageStorageManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.snapshots
@@ -18,6 +19,10 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Repositorio para la gestión del perfil de usuario y el estado de autenticación.
+ * Centraliza la comunicación con Firebase Auth, Firestore y el almacenamiento local (Room).
+ */
 @Singleton
 class UserRepository @Inject constructor(
     private val userDao: UserDao,
@@ -47,6 +52,10 @@ class UserRepository @Inject constructor(
         }
     }
 
+    /**
+     * Proporciona un flujo reactivo del usuario actualmente autenticado.
+     * Escucha cambios en Firestore y sincroniza los datos con la base de datos local.
+     */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun getCurrentUserFlow(): Flow<UserEntity?> {
         return authStateFlow.flatMapLatest { uid ->
@@ -122,7 +131,7 @@ class UserRepository @Inject constructor(
         }
     }
 
-    private val imageStorageManager = com.example.smartfinance.utils.ImageStorageManager
+    private val imageStorageManager = ImageStorageManager
 
     fun uploadProfilePicture(uri: android.net.Uri): String? {
         android.util.Log.d("UserRepository", "Saving profile picture locally for URI: $uri")

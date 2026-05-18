@@ -12,12 +12,25 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
+/**
+ * Repositorio encargado de gestionar las transacciones (ingresos y gastos).
+ * Sincroniza Firebase Firestore (Nube) y Room (Local).
+ *
+ * Nota: hago la sincronnización ya que firebase con la versión gratuita no almacena imagenes y tiene un límite
+ */
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val firestore: FirebaseFirestore
 ) {
     private val transactionsCollection = firestore.collection("transactions")
 
+    /**
+     * Obtiene un flujo de transacciones filtradas por el ID de usuario.
+     * Los datos se recuperan de Firestore y se guardan automáticamente en la BD local.
+     * 
+     * @param userId El identificador único del usuario.
+     * @return Flow con la lista de transacciones ordenada por fecha descendente.
+     */
     fun getTransactionsByUser(userId: String): Flow<List<TransactionEntity>> {
         return transactionsCollection
             .whereEqualTo("userId", userId)
@@ -28,6 +41,11 @@ class TransactionRepository @Inject constructor(
             }
     }
 
+    /**
+     * Inserta una nueva transacción tanto en Firestore como en la base de datos local.
+     * 
+     * @param transaction La entidad de la transacción a insertar.
+     */
     suspend fun insertTransaction(transaction: TransactionEntity) {
         val docRef = if (transaction.id.isEmpty()) {
             transactionsCollection.document()
